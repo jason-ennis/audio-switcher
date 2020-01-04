@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using AudioSwitcher.Audio;
 using AudioSwitcher.ComponentModel;
 
 namespace AudioSwitcher.ApplicationModel
@@ -40,8 +41,17 @@ namespace AudioSwitcher.ApplicationModel
             get { return Application.ExecutablePath; }
         }
 
+        public IDictionary<string, string> Args { get; set; }
+
         public void Start()
         {
+            //JRE just switch the device and end
+            if (Args.Keys.Contains("switch"))
+            {
+                SwitchDevice();
+                return;
+            }
+
             // Some of the startup services expect, or require a SynchronizationContext, 
             // so we run them after the message loop has started.
             RunOnNextIdle(() => RunStartupServices());
@@ -90,6 +100,33 @@ namespace AudioSwitcher.ApplicationModel
                     action();
                 }
             }
+        }
+
+        private void SwitchDevice()
+        {
+            var manager = new AudioDeviceManager();
+            var devices = manager.GetAudioDevices(AudioDeviceKind.Playback, AudioDeviceState.Active);
+            var current = manager.GetDefaultAudioDevice(AudioDeviceKind.Playback, AudioDeviceRole.Multimedia)
+                .ToString()
+                .ToUpper()
+                .Replace(" ", "");
+
+            var headphones = Args["headphones"]
+                .ToUpper()
+                .Replace(" ", "");
+
+            var speakers = Args["speakers"]
+                .ToUpper()
+                .Replace(" ", "");
+
+            AudioDevice device = null;
+            if (current == headphones)
+                device = devices.FirstOrDefault(d => d.ToString().ToUpper().Replace(" ", "") == speakers);
+            else
+                device = devices.FirstOrDefault(d => d.ToString().ToUpper().Replace(" ", "") == headphones);
+
+            if (device != null)
+                manager.SetDefaultAudioDevice(device, AudioDeviceRole.Multimedia);
         }
     }
 }

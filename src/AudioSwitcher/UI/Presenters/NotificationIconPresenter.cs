@@ -75,9 +75,16 @@ namespace AudioSwitcher.UI.Presenters
 
         private void SetIcon()
         {
-            var device = _deviceManager.GetDefaultAudioDevice(AudioDeviceKind.Playback, AudioDeviceRole.Multimedia);
+            var device = _deviceManager.GetDefaultAudioDevice(AudioDeviceKind.Playback, AudioDeviceRole.Multimedia)
+                .ToString()
+                .ToUpper()
+                .Replace(" ", "");
 
-            if (device.ToString() == _application.Args["headphones"])
+            var headphones = _application.Args["headphones"]
+                .ToUpper()
+                .Replace(" ", "");
+
+            if (device == headphones)
                 _icon.Icon = Resources.NotificationArea;
             else
                 _icon.Icon = Resources.NotificationAreaSpeakers;

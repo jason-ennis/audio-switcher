@@ -2,6 +2,7 @@
 // Copyright (c) David Kean.
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace AudioSwitcher.ApplicationModel
@@ -41,5 +42,6 @@ namespace AudioSwitcher.ApplicationModel
             get;
         }
         
+        IDictionary<string,string> Args { get; set; }
     }
 }
