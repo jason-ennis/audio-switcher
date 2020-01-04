@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Windows.Forms;
 using AudioSwitcher.ApplicationModel;
+using AudioSwitcher.Audio;
 using AudioSwitcher.Presentation;
 
 namespace AudioSwitcher.UI.Presenters
@@ -12,22 +13,30 @@ namespace AudioSwitcher.UI.Presenters
     [Presenter(PresenterId.NotificationIcon)]
     internal class NotificationIconPresenter : NonModalPresenter, IDisposable
     {
-        private readonly NotifyIcon _icon = new NotifyIcon();
+        private NotifyIcon _icon = new NotifyIcon();
         private readonly PresenterHost _presenterManager;
 		private readonly IApplication _application;
+        private readonly AudioDeviceManager _deviceManager;
 
         [ImportingConstructor]
-        public NotificationIconPresenter(IApplication application, PresenterHost presenterManager)
+        public NotificationIconPresenter(
+            IApplication application, 
+            PresenterHost presenterManager, 
+            AudioDeviceManager deviceManager)
         {
 			_application = application;
             _presenterManager = presenterManager;
+
+            _deviceManager = deviceManager;
+            _deviceManager.DefaultDeviceChanged += OnDefaultDeviceChanged;
         }
 
 		public override void Bind()
 		{
 			_icon.Text = _application.Title;
-			_icon.Icon = _application.NotificationAreaIcon;
+			//_icon.Icon = Resources.NotificationArea;  //_application.NotificationAreaIcon;
 			_icon.MouseUp += OnNotifyIconMouseUp;
+            SetIcon();
 		}
 
         public override void Show()
@@ -63,5 +72,17 @@ namespace AudioSwitcher.UI.Presenters
 				_presenterManager.ShowContextMenu(PresenterId.NotificationIconContextMenu, Cursor.Position);
 			}
 		}
+
+        private void SetIcon()
+        {
+            var device = _deviceManager.GetDefaultAudioDevice(AudioDeviceKind.Playback, AudioDeviceRole.Multimedia);
+
+            if (device.ToString() == _application.Args["headphones"])
+                _icon.Icon = Resources.NotificationArea;
+            else
+                _icon.Icon = Resources.NotificationAreaSpeakers;
+        }
+
+        private void OnDefaultDeviceChanged(object sender, DefaultAudioDeviceEventArgs e) => SetIcon();
     }
 }
